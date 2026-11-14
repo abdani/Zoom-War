@@ -5,8 +5,9 @@
 <h1 align="center">Zoom War</h1>
 
 <p align="center">
-  Keeps trying to join a full Zoom meeting until a slot opens — like a ticket war, but for Zoom.<br>
-  Paste the invite link, walk away, and get an alarm the moment you are in.
+  Ever been stuck outside a full Zoom meeting, fighting everyone else for a seat? Same here, LOL.<br>
+  So I built this for all of us: paste the invite link, walk away, and Zoom War keeps trying until a slot opens —<br>
+  then sounds the alarm the moment you're in. Like a ticket war, but for Zoom.
 </p>
 
 <p align="center">
