@@ -61,7 +61,7 @@ def main():
     big, small = user32.SendMessageW(hwnd, 0x7F, 1, 0), user32.SendMessageW(hwnd, 0x7F, 0, 0)  # WM_GETICON
     assert big and small, "console window has no icon"
     print("icon set: big + small")
-    user32.SetWindowPos(hwnd, None, 120, 80, 980, 520, 0x4)  # SWP_NOZORDER
+    user32.SetWindowPos(hwnd, None, 120, 80, 900, 560, 0x4)  # SWP_NOZORDER
     win = Application(backend="win32").connect(handle=hwnd).window(handle=hwnd)
     win.set_focus()                                  # plain SetForegroundWindow is refused from a background process
     time.sleep(0.5)

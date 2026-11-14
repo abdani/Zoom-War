@@ -30,6 +30,7 @@
 | **Guard mode** | After you are in, it keeps watching. If you get dropped, it starts trying again on its own. On by default. |
 | **Stays awake** | Keeps the PC from sleeping or turning the screen off while it runs, and lets go when it stops. |
 | **Your name** | Join with your Zoom account's name or type another one. |
+| **Live console** | A color banner, a meeting panel, color-coded log lines, a spinner while Zoom connects, a countdown bar between attempts and the attempt number in the window title. Falls back to plain text when the output isn't a console. |
 | **Calibration mode** | `--calibrate` lists Zoom's windows as they appear, so the markers can be tuned if a Zoom update renames them. |
 
 ## Usage

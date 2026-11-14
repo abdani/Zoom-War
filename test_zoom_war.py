@@ -1,5 +1,8 @@
 """Cek cepat parser link:  python test_zoom_war.py"""
-from zoom_war import build_zoommtg, parse_link
+import zoom_war
+from zoom_war import BLUE, build_zoommtg, fmt_id, paint, parse_link, visible_len
+
+zoom_war.ANSI = True  # exercise the colored path too
 
 assert parse_link("https://us06web.zoom.us/j/81234567890?pwd=abc") == \
     ("us06web.zoom.us", "81234567890", {"pwd": "abc"})
@@ -13,6 +16,8 @@ for salah in ("https://zoom.us/j/812345678901234",          # 15 digit, bukan ID
         raise AssertionError(f"harusnya ditolak: {salah}")
     except ValueError:
         pass
-assert build_zoommtg("zoom.us", "123456789", {"tk": "T"}, "Abdani Z") == \
-    "zoommtg://zoom.us/join?action=join&confno=123456789&tk=T&uname=Abdani%20Z"
+assert build_zoommtg("zoom.us", "123456789", {"tk": "T"}, "Jane Doe") == \
+    "zoommtg://zoom.us/join?action=join&confno=123456789&tk=T&uname=Jane%20Doe"
+assert fmt_id("81234567890") == "812 3456 7890" and fmt_id("123456789") == "123 456 789"
+assert visible_len(paint("abc", BLUE, bold=True)) == 3
 print("OK")

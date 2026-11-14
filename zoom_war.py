@@ -2,7 +2,7 @@
 zoom_war.py — keeps trying to join a Zoom meeting until a slot opens (like a ticket war).
 
 Usage (Windows, with the Zoom desktop app installed):
-    python zoom_war.py "https://zoom.us/j/81234567890?pwd=xxxx" --name "Abdani"
+    python zoom_war.py "https://zoom.us/j/81234567890?pwd=xxxx" --name "Your Name"
     python zoom_war.py                      -> asks you to paste the link
     python zoom_war.py --calibrate          -> watch Zoom's windows (see below)
 
@@ -153,7 +153,7 @@ def klik_preview(hwnd):
     try:
         from pywinauto import Desktop
     except ImportError:
-        log("pywinauto is not installed. Run:  pip install pywinauto")
+        log("pywinauto is not installed. Run:  pip install pywinauto", "warn")
         return False
 
     def tekan(el):
@@ -174,16 +174,16 @@ def klik_preview(hwnd):
             if el.element_info.control_type == "CheckBox" and el.get_toggle_state() == 1:
                 continue
             if re.search(TOMBOL_MIC_OFF, n) or re.search(TOMBOL_CAM_OFF, n):
-                log(f"Clicking '{nama}'")
+                log(f"Clicking '{nama}'", "act")
                 tekan(el)
         for el, nama in tombol:
             if re.search(TOMBOL_JOIN, nama.lower()):
-                log(f"Clicking '{nama}'")
+                log(f"Clicking '{nama}'", "act")
                 tekan(el)
                 return True
-        log(f"Join button not found. Visible buttons: {[n for _, n in tombol]}")
+        log(f"Join button not found. Visible buttons: {[n for _, n in tombol]}", "warn")
     except Exception as e:
-        log(f"Could not read the preview window: {e}")
+        log(f"Could not read the preview window: {e}", "warn")
     return False
 
 
@@ -195,10 +195,104 @@ def tutup_dialog_zoom():
 
 
 # ---------------------------------------------------------------------------
-# 3. Notifikasi
+# 3. Look: banner, colors, panels, a live status line. 24-bit ANSI colors in the
+#    Windows console; plain text when output isn't a console (pipe, file, tests).
 # ---------------------------------------------------------------------------
-def log(pesan):
-    print(f"[{datetime.now():%H:%M:%S}] {pesan}", flush=True)
+ANSI = False
+BLUE, CYAN, RED, ORANGE = (45, 140, 255), (90, 210, 255), (235, 60, 60), (255, 150, 60)
+GREEN, YELLOW, GREY, WHITE = (70, 215, 130), (255, 200, 70), (125, 132, 150), (235, 238, 245)
+WIDTH = 64
+KINDS = {"info": ("•", GREY, WHITE), "try": ("►", BLUE, WHITE), "act": ("»", CYAN, WHITE),
+         "ok": ("■", GREEN, GREEN), "warn": ("!", YELLOW, YELLOW), "err": ("x", RED, RED)}
+LETTERS = {  # 3-row block font for the banner
+    "Z": ["▀▀█", "▄▀ ", "█▄▄"], "O": ["█▀█", "█ █", "█▄█"], "M": ["█▀▄▀█", "█ ▀ █", "█   █"],
+    "W": ["█   █", "█ █ █", "▀▄▀▄▀"], "A": ["█▀█", "█▀█", "█ █"], "R": ["█▀█", "█▀▄", "█ █"], " ": ["  "] * 3,
+}
+
+
+def setup_console():
+    """Turn on ANSI colors (VT processing) when stdout is a real console."""
+    global ANSI
+    if not sys.stdout.isatty():
+        return
+    h, mode = kernel32.GetStdHandle(-11), wt.DWORD()   # STD_OUTPUT_HANDLE
+    ANSI = bool(kernel32.GetConsoleMode(h, ctypes.byref(mode))
+                and kernel32.SetConsoleMode(h, mode.value | 0x4))   # ENABLE_VIRTUAL_TERMINAL_PROCESSING
+
+
+def paint(text, rgb=None, bold=False, dim=False):
+    if not ANSI:
+        return text
+    codes = (["1"] if bold else []) + (["2"] if dim else []) + ([f"38;2;{rgb[0]};{rgb[1]};{rgb[2]}"] if rgb else [])
+    return f"\x1b[{';'.join(codes)}m{text}\x1b[0m" if codes else text
+
+
+def visible_len(text):
+    return len(re.sub(r"\x1b\[[0-9;]*m", "", text))
+
+
+def _blend(a, b, t):
+    return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
+
+
+def banner():
+    word = "ZOOM WAR"
+    rows = [" ".join(LETTERS[ch][r] for ch in word) for r in range(3)]
+    split = len(" ".join(LETTERS[ch][0] for ch in "ZOOM"))
+    print()
+    for row in rows:
+        out = []
+        for i, ch in enumerate(row):  # ZOOM: blue -> cyan, WAR: red -> orange (the icon's lightning)
+            t = i / max(1, split) if i < split else (i - split) / max(1, len(row) - split)
+            out.append(paint(ch, _blend(BLUE, CYAN, t) if i < split else _blend(RED, ORANGE, t), bold=True))
+        print("   " + "".join(out))
+    print("   " + paint("keeps trying until you're in", GREY) + paint("  ·  ", GREY, dim=True)
+          + paint("Ctrl+C to stop", GREY, dim=True))
+    print("   " + paint("─" * (WIDTH - 3), GREY, dim=True))
+
+
+def panel(title, rows, color=BLUE):
+    """Framed box: title in the top border, rows of (label, value)."""
+    inner = WIDTH - 4
+    head = f"─ {title} " if title else ""
+    print("  " + paint("┌" + head + "─" * (inner - len(head)) + "┐", color))
+    for label, value in rows:
+        text = f" {paint(f'{label:<10}', GREY)}{value}" if label else f" {value}"
+        print("  " + paint("│", color) + text + " " * max(0, inner - visible_len(text)) + paint("│", color))
+    print("  " + paint("└" + "─" * inner + "┘", color))
+
+
+def fmt_id(confno):
+    """Meeting ID grouped like Zoom shows it: 812 3456 7890 / 123 456 7890 / 123 456 789."""
+    cuts = {11: (3, 7), 10: (3, 6)}.get(len(confno), (3, 6))
+    return f"{confno[:cuts[0]]} {confno[cuts[0]:cuts[1]]} {confno[cuts[1]:]}"
+
+
+def fmt_dur(seconds):
+    m, s = divmod(int(seconds), 60)
+    return f"{m // 60}h {m % 60:02d}m" if m >= 60 else f"{m}m {s:02d}s" if m else f"{s}s"
+
+
+def live(text):
+    """One live line that is rewritten in place (spinner, countdown); console only."""
+    if ANSI:
+        print(f"\r\x1b[2K   {text}", end="", flush=True)
+
+
+def title(text):
+    if sys.platform == "win32":
+        kernel32.SetConsoleTitleW(f"Zoom War · {text}" if text else "Zoom War")
+
+
+def ask(label):
+    return input(f"   {paint('►', RED, bold=True)} {paint(label, WHITE, bold=True)} ")
+
+
+def log(pesan, kind="info"):
+    sym, sym_color, text_color = KINDS[kind]
+    lead = "\r\x1b[2K" if ANSI else ""                   # wipe the status line first
+    print(f"{lead}   {paint(f'{datetime.now():%H:%M:%S}', GREY, dim=True)} "
+          f"{paint(sym, sym_color, bold=True)} {paint(pesan, text_color)}", flush=True)
 
 
 def alarm(hwnd, pesan):
@@ -224,9 +318,9 @@ def kalibrasi():
         while True:
             sekarang = {(j, k) for _, j, k in jendela_zoom()}
             for judul, kelas in sorted(sekarang - terakhir):
-                log(f"SHOWN  title={judul!r:45} class={kelas!r}")
+                log(f"SHOWN  title={judul!r:45} class={kelas!r}", "ok")
             for judul, kelas in sorted(terakhir - sekarang):
-                log(f"GONE   title={judul!r:45} class={kelas!r}")
+                log(f"GONE   title={judul!r:45} class={kelas!r}", "warn")
             terakhir = sekarang
             time.sleep(0.5)
     except KeyboardInterrupt:
@@ -236,21 +330,37 @@ def kalibrasi():
 # ---------------------------------------------------------------------------
 # 5. Loop utama
 # ---------------------------------------------------------------------------
+SPIN = "|/-\\"
+STATUS_TEXT = {"konek": "connecting", "preview": "on the preview screen", "gagal": "waiting for Zoom"}
+
+
+def menang(hwnd, judul, pesan, percobaan, mulai):
+    """The win: big green panel, window title, alarm."""
+    title(judul)
+    print("\r\x1b[2K" if ANSI else "", end="")
+    panel(None, [("", paint(f"■  {judul.upper()}", GREEN, bold=True)),
+                 ("", paint(f"after {percobaan} attempt{'s' * (percobaan != 1)} · {fmt_dur(time.time() - mulai)}", GREY))],
+          GREEN)
+    alarm(hwnd, pesan)
+
+
 def war(url, jeda, tunggu, batas_menit):
     mulai = time.time()
     percobaan = 0
     sudah_peringatan = False
     while time.time() - mulai < batas_menit * 60:
         percobaan += 1
-        log(f"Attempt #{percobaan} ...")
+        title(f"attempt #{percobaan}")
+        log(f"Attempt #{percobaan}", "try")
         try:
             os.startfile(url)
         except OSError:
             sys.exit("Could not open Zoom. Make sure the Zoom desktop app is installed.")
 
-        batas_tunggu = time.time() + tunggu
-        batas_keras = time.time() + tunggu * 4   # preview/konek tak boleh menggantung selamanya
-        klik_ke, klik_berikut = 0, 0.0
+        t0 = time.time()
+        batas_tunggu = t0 + tunggu
+        batas_keras = t0 + tunggu * 4   # preview/konek tak boleh menggantung selamanya
+        klik_ke, klik_berikut, putar = 0, 0.0, 0
         while time.time() < batas_tunggu:
             status, hwnd = cek_status()
             if status == "penuh":
@@ -261,25 +371,34 @@ def war(url, jeda, tunggu, batas_menit):
                 if klik_preview(hwnd):
                     klik_ke = 3
                 elif klik_ke == 3 and not sudah_peringatan:
-                    log("Auto-click failed, please click Join yourself (see the log above).")
+                    log("Auto-click failed, please click Join yourself (see the log above).", "warn")
                     sudah_peringatan = True
             if status in ("preview", "konek"):  # tunggu proses join selesai
                 batas_tunggu = min(batas_keras, max(batas_tunggu, time.time() + 3))
             if status == "masuk":
-                log("JOINED THE MEETING!")
-                alarm(hwnd, "You joined the Zoom meeting.")
+                menang(hwnd, "You're in the meeting", "You joined the Zoom meeting.", percobaan, mulai)
                 return True
             if status == "tunggu":
-                log("In the waiting room (you got a slot, waiting for the host).")
-                alarm(hwnd, "You are in the Zoom waiting room. Don't close it.")
+                menang(hwnd, "In the waiting room", "You are in the Zoom waiting room. Don't close it.",
+                       percobaan, mulai)
                 return True
+            putar += 1
+            status_text = STATUS_TEXT.get(status, status)
+            live(paint(SPIN[putar % 4], CYAN, bold=True) + paint(f"  {status_text}  ", WHITE)
+                   + paint(f"{time.time() - t0:4.1f}s", GREY))
             time.sleep(0.2)
 
-        log(f"Not in yet (probably full). Trying again in {jeda} seconds.")
+        log("Not in yet, probably full", "warn")
         tutup_dialog_zoom()
-        time.sleep(jeda)
+        for sisa in range(jeda, 0, -1):         # countdown bar to the next attempt
+            isi = round((jeda - sisa) / jeda * 20)
+            live(paint("next attempt in ", GREY) + paint(f"{sisa}s ", WHITE, bold=True)
+                   + paint("▓" * isi, BLUE) + paint("░" * (20 - isi), GREY, dim=True)
+                   + paint(f"   running {fmt_dur(time.time() - mulai)}", GREY, dim=True))
+            time.sleep(1)
 
-    log(f"Time limit of {batas_menit} minutes reached, stopping.")
+    title("time limit reached")
+    log(f"Time limit of {batas_menit} minutes reached, stopping.", "err")
     return False
 
 
@@ -293,13 +412,16 @@ def masih_di_meeting():
 
 def jaga(toleransi=3, interval=2):
     """Pantau meeting; kembali (untuk war ulang) jika terlempar keluar."""
-    log("Guard mode on: watching the meeting. Press Ctrl+C to stop.")
-    hilang = 0
+    log("Guard mode on: watching the meeting", "act")
+    title("in the meeting · guarding")
+    hilang, sejak = 0, time.time()
     while True:
         hilang = 0 if masih_di_meeting() else hilang + 1
         if hilang >= toleransi:            # ~6 detik berturut-turut di luar meeting
-            log("Dropped out of the meeting. Joining again...")
+            log("Dropped out of the meeting. Joining again...", "err")
             return
+        live(paint("● ", GREEN, bold=True) + paint("in the meeting ", WHITE)
+               + paint(fmt_dur(time.time() - sejak), GREY) + paint("   guard mode on", GREY, dim=True))
         time.sleep(interval)
 
 
@@ -328,31 +450,42 @@ def main():
         ap.add_argument(old, dest=dest, help=argparse.SUPPRESS, default=argparse.SUPPRESS, **kw)
     a = ap.parse_args()
 
+    banner()
     if a.kalibrasi:
         kalibrasi()
         return
 
     link = a.link
     while True:
-        link = link or input("Link: ")
+        link = link or ask("Paste the Zoom invite link:")
         try:
             host, confno, extra = parse_link(link)
             break
         except ValueError:
-            print("Invalid link, try again.")
+            log("That doesn't look like a Zoom link or meeting ID, try again.", "warn")
             link = ""
     nama = a.nama
     if not nama:
-        print("Your name in Zoom:\n  1. Use your Zoom account's default name\n  2. Type a new name")
-        while (pilih := input("Choose (1/2): ").strip()) not in ("1", "2"):
-            print("Type 1 or 2.")
+        print("\n   " + paint("Your name in Zoom", WHITE, bold=True))
+        print(f"     {paint('1', CYAN, bold=True)}  Use your Zoom account's default name")
+        print(f"     {paint('2', CYAN, bold=True)}  Type a new name")
+        while (pilih := ask("Choose 1 or 2:").strip()) not in ("1", "2"):
+            log("Type 1 or 2.", "warn")
         while pilih == "2" and not nama:
-            nama = input("Name: ").strip()
+            nama = ask("Name:").strip()
     if len(nama) > 64:
-        print(f"Warning: the name has {len(nama)} characters, more than 64; Zoom may cut it.")
+        log(f"The name has {len(nama)} characters, more than 64; Zoom may cut it.", "warn")
     url = build_zoommtg(host, confno, extra, nama)
-    log(f"Meeting ID {confno} | passcode {'yes' if 'pwd' in extra else 'no'}"
-        f"{' | webinar token yes' if 'tk' in extra else ''} | host {host}")
+    yes, no = paint("yes", GREEN), paint("no", GREY)
+    print()
+    panel("Meeting", [("ID", paint(fmt_id(confno), WHITE, bold=True)),
+                      ("Passcode", yes if "pwd" in extra else no),
+                      *([("Webinar", paint("registration token", GREEN))] if "tk" in extra else []),
+                      ("Host", host),
+                      ("Name", (nama[:40] + "…" if len(nama) > 41 else nama) or paint("your Zoom account's name", GREY)),
+                      ("Retry", f"every {max(5, a.jeda)}s · wait {a.tunggu}s · stop after {a.batas} min"),
+                      ("Guard", paint("off", GREY) if a.tanpa_jaga else paint("on", GREEN) + paint("  (rejoins if dropped)", GREY))])
+    print()
     # cegah laptop sleep / layar mati selama war (otomatis lepas saat script selesai)
     kernel32.SetThreadExecutionState(0x80000000 | 0x1 | 0x2)
 
@@ -380,7 +513,7 @@ def set_console_icon():
 
 def _tahan_jendela():
     try:
-        input("Press Enter to close...")
+        input("\n   " + paint("Press Enter to close...", GREY))
     except (KeyboardInterrupt, EOFError):
         pass
 
@@ -390,7 +523,9 @@ if __name__ == "__main__":
         atexit.register(_tahan_jendela)    # atexit jalan SETELAH pesan error/traceback tercetak
     if sys.platform == "win32":
         set_console_icon()
+        setup_console()
     try:
         main()
     except (KeyboardInterrupt, EOFError):  # EOF: input ditutup (Ctrl+Z / pipe kosong)
-        log("Stopped.")
+        title("stopped")
+        log("Stopped.", "warn")
