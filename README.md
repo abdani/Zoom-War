@@ -16,7 +16,13 @@
   <img alt="MIT License" src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge">
 </p>
 
-![Zoom War in its console window, asking for the name to use in Zoom](docs/images/console.png)
+<p align="center">
+  <a href="https://abdani.github.io/Zoom-War/"><b>🌐 Homepage</b></a> ·
+  <a href="../../archive/refs/heads/main.zip"><b>⬇ Download ZIP</b></a> ·
+  double-click <code>zoom_war.bat</code> · Windows 10 / 11
+</p>
+
+![Zoom War in its console window, asking for the name to use in Zoom](docs/images/console.png?v=2)
 
 ## Features
 

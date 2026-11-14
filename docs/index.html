@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zoom War – join a full Zoom meeting the moment a slot opens</title>
+<meta name="description" content="Zoom War keeps trying to join a full Zoom meeting until a slot opens, clicks through the preview with your mic and camera off, alarms you when you are in and rejoins if you get dropped. Free and open source, for Windows.">
+<meta name="keywords" content="Zoom meeting full, auto join Zoom, Zoom waiting room, rejoin Zoom, zoommtg, Windows, Python, free, open source">
+<meta name="author" content="Dani Abdani">
+<link rel="canonical" href="https://abdani.github.io/Zoom-War/">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Dani Abdani">
+<meta property="og:title" content="Zoom War – join a full Zoom meeting the moment a slot opens">
+<meta property="og:description" content="Keeps trying to join a full Zoom meeting until a slot opens, then alarms you. Free and open source, for Windows.">
+<meta property="og:url" content="https://abdani.github.io/Zoom-War/">
+<meta property="og:image" content="https://abdani.github.io/Zoom-War/images/console.png?v=2">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#2d8cff">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "SoftwareApplication",
+ "name": "Zoom War",
+ "operatingSystem": "Windows 10, Windows 11",
+ "applicationCategory": "UtilitiesApplication",
+ "description": "Keeps trying to join a full Zoom meeting until a slot opens, clicks through the preview with your mic and camera off, alarms you when you are in and rejoins if you get dropped.",
+ "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+ "downloadUrl": "https://github.com/abdani/Zoom-War/archive/refs/heads/main.zip",
+ "screenshot": "https://abdani.github.io/Zoom-War/images/console.png?v=2",
+ "author": { "@type": "Person", "name": "Dani Abdani", "url": "https://abdani.github.io/" },
+ "license": "https://opensource.org/licenses/MIT",
+ "codeRepository": "https://github.com/abdani/Zoom-War"
+}
+</script>
+<style>
+  :root { --bg:#0a0c14; --surface:rgba(255,255,255,.045); --line:rgba(255,255,255,.10); --text:#f2f4fa; --muted:#a6adc4;
+          --a1:#2d8cff; --a2:#eb3c3c; --grad:linear-gradient(135deg,var(--a1),var(--a2)); }
+  * { box-sizing:border-box } html { scroll-behavior:smooth }
+  body { margin:0; color:var(--text); font:16px/1.65 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+         background: radial-gradient(1100px 650px at 8% -10%, color-mix(in srgb, var(--a1) 30%, transparent), transparent 60%),
+                     radial-gradient(900px 650px at 100% 35%, color-mix(in srgb, var(--a2) 18%, transparent), transparent 60%), var(--bg); }
+  a { color: color-mix(in srgb, var(--a1) 65%, white) }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 20px }
+  nav { position:sticky; top:0; z-index:10; backdrop-filter:blur(14px); background:rgba(10,12,20,.62); border-bottom:1px solid var(--line) }
+  nav .wrap { display:flex; align-items:center; gap:22px; height:60px }
+  nav .brand { display:flex; align-items:center; gap:10px; font-weight:700; color:var(--text); text-decoration:none; margin-right:auto }
+  nav .brand img { height:28px }
+  nav a.link { color:var(--muted); text-decoration:none; font-weight:600; font-size:.95rem } nav a.link:hover { color:var(--text) }
+  header { text-align:center; padding:70px 0 20px }
+  header .logo { height:104px }
+  h1 { font-size:clamp(2.3rem,6vw,4rem); line-height:1.06; margin:16px 0 14px; letter-spacing:-.03em }
+  h1 span { background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent }
+  .lead { font-size:1.2rem; color:var(--muted); max-width:700px; margin:0 auto 24px }
+  .chips { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:28px }
+  .chips span { border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:6px 14px; font-size:.9rem; font-weight:600 }
+  .cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:13px 24px; border-radius:999px; font-weight:700; text-decoration:none;
+         border:1px solid var(--line); color:var(--text); background:var(--surface); transition:transform .15s }
+  .btn:hover { transform:translateY(-2px) }
+  .btn.primary { background:var(--grad); border-color:transparent; color:#fff; box-shadow:0 10px 30px color-mix(in srgb, var(--a1) 40%, transparent) }
+  .note { color:var(--muted); font-size:.88rem; margin-top:14px }
+  .shot { display:block; width:100%; max-width:960px; margin:38px auto 0; border-radius:12px; border:1px solid var(--line);
+          box-shadow:0 40px 100px rgba(0,0,0,.55) }
+  section { padding:72px 0 }
+  h2 { font-size:clamp(1.7rem,3.4vw,2.3rem); margin:0 0 10px; text-align:center; letter-spacing:-.02em }
+  .sub { color:var(--muted); text-align:center; margin:0 auto 36px; max-width:680px }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:18px }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:24px }
+  .card .ico { font-size:1.7rem } .card h3 { margin:8px 0 6px; font-size:1.1rem } .card p { margin:0; color:var(--muted); font-size:.96rem }
+  .steps { counter-reset:s } .steps .card::before { counter-increment:s; content:counter(s); display:inline-grid; place-items:center;
+          width:30px; height:30px; border-radius:50%; background:var(--grad); color:#fff; font-weight:800; margin-bottom:6px }
+  .dl { max-width:720px; margin:0 auto; text-align:center; border:1.5px solid transparent; border-radius:22px; padding:34px;
+        background:linear-gradient(#11141f,#11141f) padding-box, var(--grad) border-box }
+  pre { text-align:left; background:#05070d; border:1px solid var(--line); border-radius:12px; padding:14px 16px; overflow-x:auto;
+        font:14px/1.6 ui-monospace,Consolas,monospace; color:#d6dcf0; margin:18px 0 0 }
+  code { background:rgba(255,255,255,.08); padding:1px 6px; border-radius:6px; font-size:.9em }
+  pre code { background:none; padding:0 }
+  details { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 20px; margin-bottom:12px }
+  summary { cursor:pointer; font-weight:700 } details p { color:var(--muted); margin:10px 0 0 }
+  footer { border-top:1px solid var(--line); padding:30px 0 46px; color:var(--muted); font-size:.9rem; text-align:center }
+  @media (max-width:820px) { nav a.link { display:none } }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="#"><img src="images/icon.png" alt="">Zoom War</a>
+  <a class="link" href="#features">Features</a>
+  <a class="link" href="#how">How it works</a>
+  <a class="link" href="#download">Download</a>
+  <a class="link" href="#faq">FAQ</a>
+  <a class="link" href="https://github.com/abdani/Zoom-War">GitHub</a>
+</div></nav>
+
+<header class="wrap">
+  <img class="logo" src="images/icon.png" alt="Zoom War icon">
+  <h1>Meeting full? <span>Get in anyway.</span></h1>
+  <p class="lead">Zoom War keeps trying to join a full Zoom meeting until a slot opens — like a ticket war, but for Zoom. Paste the invite link, walk away, and get an alarm the moment you are in.</p>
+  <div class="chips"><span>🔁 Retries for you</span><span>🎤 Mic &amp; camera off</span><span>🔔 Alarm when in</span><span>🛡️ Rejoins if dropped</span></div>
+  <div class="cta">
+    <a class="btn primary" href="#download">⬇ Download for Windows</a>
+    <a class="btn" href="https://github.com/abdani/Zoom-War">View on GitHub</a>
+  </div>
+  <p class="note">Windows 10 / 11 · Python 3 · Zoom desktop app · Free &amp; open source (MIT)</p>
+  <img class="shot" src="images/console.png?v=2" width="960" height="318" alt="Zoom War console: banner, pasted invite link and the name menu">
+</header>
+
+<section id="features" class="wrap">
+  <h2>Set it, forget it, get in</h2>
+  <p class="sub">Everything you would do by hand when a meeting is full — only faster, and without missing the moment a seat frees up.</p>
+  <div class="grid">
+    <div class="card"><div class="ico">🔁</div><h3>Join until you're in</h3><p>Opens the meeting in the Zoom app, closes the "meeting is full" dialog and tries again every few seconds (5 s minimum).</p></div>
+    <div class="card"><div class="ico">🔗</div><h3>Any invite link</h3><p>zoom.us and company hosts, web-client and webinar links with a registration token, or just the meeting ID. The passcode is used automatically.</p></div>
+    <div class="card"><div class="ico">🎤</div><h3>Clicks through the preview</h3><p>Turns your microphone and camera off on the preview screen, then presses Join for you.</p></div>
+    <div class="card"><div class="ico">🔔</div><h3>Alarm when you're in</h3><p>Beeps, brings Zoom to the front and shows a pop-up. The waiting room counts as a win: you have a slot.</p></div>
+    <div class="card"><div class="ico">🛡️</div><h3>Guard mode</h3><p>Keeps watching after you are in. Dropped out? It starts trying again on its own.</p></div>
+    <div class="card"><div class="ico">🖥️</div><h3>Live console</h3><p>A color banner, a meeting panel, a spinner while Zoom connects, a countdown between attempts and the attempt number in the window title.</p></div>
+  </div>
+</section>
+
+<section id="how" class="wrap">
+  <h2>How it works</h2>
+  <p class="sub">No browser extension and no Zoom account changes — it drives the Zoom desktop app you already have.</p>
+  <div class="grid steps">
+    <div class="card"><h3>Opens the meeting</h3><p>The invite link becomes a <code>zoommtg://</code> link that the Zoom app opens directly, with your passcode and name.</p></div>
+    <div class="card"><h3>Reads Zoom's windows</h3><p>Five times a second it checks Zoom's windows: full, connecting, preview, waiting room or in.</p></div>
+    <div class="card"><h3>Clicks for you</h3><p>On the preview screen it finds the mic, camera and Join buttons (UI Automation) and presses them.</p></div>
+    <div class="card"><h3>Tries again</h3><p>Full? The dialog is closed and the next attempt starts after the delay — until you are in or the time limit is reached.</p></div>
+  </div>
+</section>
+
+<section id="download" class="wrap">
+  <div class="dl">
+    <h2>Download Zoom War</h2>
+    <p class="note" style="margin-top:6px">Needs Windows 10 / 11, the <a href="https://zoom.us/download">Zoom desktop app</a> and <a href="https://www.python.org/downloads/">Python 3</a> (tick “Add to PATH”).</p>
+    <div class="cta" style="margin-top:18px"><a class="btn primary" href="https://github.com/abdani/Zoom-War/archive/refs/heads/main.zip">⬇ Download ZIP</a></div>
+    <pre><code>1. Unzip it and double-click zoom_war.bat
+2. Paste the Zoom invite link and choose your name
+3. Leave the window open — you'll hear the alarm when you're in
+
+# or from a terminal, with options:
+python zoom_war.py "https://zoom.us/j/81234567890?pwd=xxxx" --name "Your Name" --delay 5 --limit 120</code></pre>
+  </div>
+</section>
+
+<section id="faq" class="wrap">
+  <h2>Questions</h2>
+  <p class="sub">&nbsp;</p>
+  <details><summary>Does it work with the Zoom web client?</summary><p>No — it needs the Zoom desktop app for Windows, which it opens through <code>zoommtg://</code> links.</p></details>
+  <details><summary>Will my mic or camera turn on by accident?</summary><p>On the preview screen Zoom War turns both off before it presses Join. A checkbox that is already ticked is left alone, so it never switches your camera back on.</p></details>
+  <details><summary>Is this spamming Zoom?</summary><p>No. It waits at least 5 seconds between attempts and stops after the time limit (120 minutes by default). Use it only for meetings you are invited to.</p></details>
+  <details><summary>Why does the window reopen when I double-click the .bat?</summary><p>Windows Terminal ignores an app's own icon, so the launcher reopens in the classic console. That way the Zoom War icon shows in the title bar and on the taskbar.</p></details>
+  <details><summary>Is it made by Zoom?</summary><p>No. Zoom War is an independent, open-source project and is not affiliated with Zoom Communications.</p></details>
+</section>
+
+<footer><div class="wrap">
+  Zoom War is free and open source · <a href="https://github.com/abdani/Zoom-War">github.com/abdani/Zoom-War</a><br>
+  More apps by <a href="https://abdani.github.io/">Dani Abdani</a> · © 2026 · MIT License
+</div></footer>
+</body>
+</html>
