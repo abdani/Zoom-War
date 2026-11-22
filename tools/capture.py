@@ -1,7 +1,8 @@
 """README screenshot + icon check: opens zoom_war.bat the way a double-click does, waits for the
 classic console window, checks that it carries the Zoom War icon, pastes a demo link and grabs
 the window at the name menu (no Zoom meeting is ever started).
-usage (from the repo root): python tools/capture.py   -> docs/images/console.png"""
+usage (from the repo root): python tools/capture.py   -> capture.png (git-ignored; docs/images/console.png
+is a real run with the invite link and meeting ID swapped for made-up ones)"""
 import ctypes
 import os
 import subprocess
@@ -116,8 +117,7 @@ def main():
     time.sleep(0.5)
     win.type_keys(DEMO_LINK + "{ENTER}", with_spaces=True, pause=0.01)
     time.sleep(1.5)
-    os.makedirs("docs/images", exist_ok=True)
-    grab(hwnd, "docs/images/console.png")
+    grab(hwnd, "capture.png")
     pid = wt.DWORD()
     user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
     subprocess.run(["taskkill", "/PID", str(pid.value), "/T", "/F"], capture_output=True,  # never reaches the war

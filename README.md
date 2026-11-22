@@ -23,7 +23,7 @@
   double-click <code>zoom_war.bat</code> · Windows 10 / 11
 </p>
 
-![Zoom War in its console window, asking for the name to use in Zoom](docs/images/console.png?v=2)
+![Zoom War in its console window: the meeting panel, a full first attempt, in on the second, then guard mode watching the meeting](docs/images/console.png?v=3)
 
 ## Features
 
@@ -80,8 +80,8 @@ Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop at any time.
 
 ```powershell
 python test_zoom_war.py      # link parser: IDs, passcodes, webinar tokens, invalid links
-python tools/capture.py      # README screenshot: opens zoom_war.bat like a double-click, checks the
-                             # window icon, types a made-up link and stops at the name menu
+python tools/capture.py      # icon check: opens zoom_war.bat like a double-click, checks the window
+                             # icon, types a made-up link and saves capture.png at the name menu
 ```
 
 ## Built with
