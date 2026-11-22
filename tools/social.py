@@ -1,6 +1,6 @@
 """1280x640 social card (GitHub profile, abdani.github.io, link previews) in the same layout as the
 other apps: icon + name left, the app's window with a soft shadow right. Uses docs/images/console.png
-from tools/capture.py.   usage (from the repo root): python tools/social.py -> docs/images/social-preview.png"""
+(the README screenshot).   usage (from the repo root): python tools/social.py -> docs/images/social-preview.png"""
 import os
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -58,7 +58,8 @@ def social():
     d.text((70, 396), "War", font=title, fill=(255, 255, 255))
     d.text((75, 503), "Get into a full Zoom meeting", font=font("segoeuil.ttf", 27), fill=(216, 222, 240))
     d.text((75, 541), "auto-retry  ·  alarm  ·  rejoin  ·  open source", font=font("segoeuil.ttf", 21), fill=(150, 160, 190))
-    place(c, window("console.png", 0.72), 560, 206)
+    win = window("console.png", 0.7)
+    place(c, win, 560, (H - win.height) // 2)
     out = os.path.join(IMG, "social-preview.png")
     c.convert("RGB").save(out, optimize=True)
     print(out, c.size, os.path.getsize(out) // 1024, "KB")
